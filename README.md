@@ -60,6 +60,8 @@ bash benchmark/run_benchmark.sh
 uv run streamlit run dashboard.py
 ```
 
+> **Note**: The dashboard is in beta — functional but still being improved in both features and design. Contributions welcome!
+
 No config needed — everything is pre-configured in `benchmark/`.
 
 ### What to Expect
