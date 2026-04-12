@@ -31,7 +31,7 @@ def load_proposal_config(proposal_path: Path) -> dict:
     config = {
         "metric": "primary_metric",
         "hardware": "local",
-        "investigators": 2,
+        "investigators": None,  # None = auto (match compute node count)
         "seeds": 3,
         "research_budget_minutes": None,
         "rate_limit_policy": "wait",
@@ -59,10 +59,14 @@ def load_proposal_config(proposal_path: Path) -> dict:
                 config["hardware"] = content_lines[0]
         elif header == "Investigators":
             if content_lines:
-                try:
-                    config["investigators"] = int(content_lines[0])
-                except ValueError:
-                    pass
+                val = content_lines[0].strip().lower()
+                if val == "auto":
+                    config["investigators"] = None  # resolved below from hardware
+                else:
+                    try:
+                        config["investigators"] = int(val)
+                    except ValueError:
+                        pass
         elif header == "Seeds":
             if content_lines:
                 try:
@@ -86,5 +90,10 @@ def load_proposal_config(proposal_path: Path) -> dict:
                     config["paper_review_rounds"] = int(content_lines[0])
                 except ValueError:
                     pass
+
+    # Resolve investigator count from compute nodes if set to auto/None
+    if config["investigators"] is None:
+        nodes = [n.strip() for n in config["hardware"].split("+")]
+        config["investigators"] = max(1, len(nodes))
 
     return config

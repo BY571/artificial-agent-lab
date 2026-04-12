@@ -56,8 +56,10 @@ local
 
 ### Investigators
 
-<!-- How many parallel research threads to pursue -->
-2
+<!-- How many parallel research threads to pursue. -->
+<!-- If omitted or set to "auto", defaults to the number of compute nodes. -->
+<!-- e.g., hardware: local+gpu1+gpu2 → 3 investigators automatically. -->
+auto
 
 ### Seeds
 
