@@ -164,6 +164,8 @@ git checkout main && git merge research/<session-name>
 
 ## What You Get
 
+After a session completes, the lab produces a full research package — paper (or summary), reproducibility notebook, structured results, and a knowledge graph capturing every experiment and insight.
+
 | Output | Description |
 |--------|-------------|
 | `paper/paper.pdf` or `paper/summary.md` | Research paper or findings summary |
