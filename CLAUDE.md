@@ -87,6 +87,22 @@ git checkout main
 git merge research/<session-name>
 ```
 
+## Benchmark
+
+When the user says "run the benchmark" or "let's benchmark":
+
+```bash
+bash benchmark/run_benchmark.sh
+```
+
+This runs the CIFAR-10 benchmark — a self-contained ML task that tests the full lab pipeline:
+- Simple CNN baseline (~70% accuracy) → goal is >85%
+- Includes training script, model, research proposal, and a PyTorch skill
+- 1 hour budget, summary output, runs locally
+- Tests: thread creation, experiments, knowledge graph, findings, summary writing
+
+The benchmark directory has everything pre-configured. No setup needed beyond having PyTorch and torchvision installed.
+
 ## Structure
 
 ```
@@ -116,6 +132,11 @@ research-lab/
 │       ├── knowledge_graph.jsonl  #   Knowledge nodes
 │       └── paper/                 #   Final paper
 ├── knowledge_graph.jsonl          # Repo-level (across sessions)
+├── benchmark/                     # Self-contained benchmark task
+│   ├── sources/                   #   CNN + training script
+│   ├── skills/                    #   PyTorch patterns
+│   ├── research_proposal.md       #   Pre-written proposal
+│   └── run_benchmark.sh           #   One-command launcher
 └── scripts/
     └── init_session.py
 ```
