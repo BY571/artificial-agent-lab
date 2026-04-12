@@ -28,3 +28,4 @@ autoresearch/*/runs/*/run.log
 *.pth
 *.pt
 *.ckpt
+autoresearch/

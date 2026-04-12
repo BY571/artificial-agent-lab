@@ -28,10 +28,10 @@ def load_proposal(session_dir: Path) -> dict:
     """Parse research_proposal.md for dashboard display."""
     path = session_dir / "research_proposal.md"
     if not path.exists():
-        return {"question": "Unknown", "metric": "sharpe_ratio", "hardware": "unknown",
+        return {"question": "Unknown", "metric": "primary_metric", "hardware": "unknown",
                 "hypothesis": "", "investigators": 2}
     text = path.read_text()
-    info = {"question": "", "metric": "sharpe_ratio", "hardware": "local",
+    info = {"question": "", "metric": "primary_metric", "hardware": "local",
             "hypothesis": "", "investigators": 2}
 
     sections = text.split("## ")
@@ -398,7 +398,7 @@ def build_knowledge_graph_chart(nodes: list[dict]) -> go.Figure:
 
 def main():
     st.set_page_config(
-        page_title="TorchTrade Research Lab",
+        page_title="Artificial Agent Lab",
         page_icon="🔬",
         layout="wide",
         initial_sidebar_state="expanded",

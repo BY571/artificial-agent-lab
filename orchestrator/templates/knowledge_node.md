@@ -6,51 +6,48 @@ Append one JSON line to `knowledge_graph.jsonl` after EVERY experiment. This is 
 
 ```json
 {
-  "id": "001_exp03",
-  "thread": "001_reward_shaping",
-  "parent": "001_exp01",
-  "timestamp": "2026-04-07T16:30:00",
+  "id": "001_exp03_phd_1",
+  "thread": "001_augmentation",
+  "parent": "001_exp02_phd_1",
+  "timestamp": "2026-04-12T14:30:00",
 
-  "title": "Sortino-style asymmetric reward",
+  "title": "Added BatchNorm after each conv layer",
 
-  "what": "Changed reward_transform.py to penalize negative returns 2x more than positive: r = log_return * (2.0 if negative else 1.0) - 0.2*|unrealized_pnl|",
+  "what": "Added nn.BatchNorm2d(channels) after each Conv2d in model.py, before the ReLU activation.",
 
-  "why": "The baseline v10 reward treats gains and losses symmetrically. In trading, avoiding losses matters more than capturing gains (asymmetric risk). Penalizing downside should teach the agent to cut losses faster while still capturing trends.",
+  "why": "Experiment 02 added augmentation (+1% accuracy). BatchNorm stabilizes training and often adds 2-5% on CIFAR-10. Combined with augmentation it should compound.",
 
-  "how": "Modified RewardTransform._step() to multiply log_return by 2.0 when negative, 1.0 when positive. Kept the unrealized PnL penalty at 0.2. Trained with default config (10M frames, seed=42, num_envs=2500) on local node.",
+  "how": "Modified model.py: inserted BatchNorm2d after each of the 3 conv layers. Kept all other settings from exp02 (augmentation, 10 epochs, lr=0.01, seed=42).",
 
   "outcome": "positive",
 
   "result": {
-    "total_return_pct": 12.5,
-    "sharpe_ratio": 0.8,
-    "max_drawdown_pct": 18.2,
-    "num_trades": 87,
-    "buy_hold_r_squared": 0.31
+    "test_accuracy": 76.76,
+    "train_accuracy": 78.5,
+    "test_loss": 0.68
   },
 
   "decision": "KEEP",
 
-  "vs_baseline": "+31.4% total_return_pct improvement over parent (001_exp01: -18.87%)",
+  "vs_baseline": "+2.5% accuracy over parent (001_exp02: 74.25%)",
 
   "insights": [
-    "Asymmetric penalty produces tighter drawdowns (18.2% vs 30.7% baseline)",
-    "First configuration to achieve positive return on OOD eval data",
-    "Trade count dropped from 146 to 87 — agent is more selective",
-    "B&H R² still low (0.31) — not a buy-and-hold mimic"
+    "BatchNorm adds consistent improvement on top of augmentation",
+    "Training is more stable — loss curve is smoother",
+    "Still undertrained at 10 epochs — accuracy likely higher with more epochs"
   ],
 
   "failures_and_warnings": [
-    "Training still shows instability after 7M frames — early stopping needed"
+    "10 epochs may not be enough to see full benefit of BatchNorm"
   ],
 
   "worth_exploring_next": [
-    "Try asymmetry factor of 3.0 or 4.0 (stronger downside penalty)",
-    "Combine with drawdown penalty for double protection",
-    "Test with early stopping at 3M frames to avoid overtraining"
+    "Train for 30-50 epochs with cosine annealing LR schedule",
+    "Try higher initial learning rate (0.1) now that BatchNorm stabilizes training",
+    "Add dropout before the classifier to reduce overfitting"
   ],
 
-  "tags": ["reward", "asymmetric", "improvement", "positive-return"]
+  "tags": ["architecture", "batchnorm", "improvement"]
 }
 ```
 

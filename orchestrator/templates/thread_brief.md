@@ -37,8 +37,8 @@ The current best result to beat:
 
 Which node to run experiments on. Read `compute_nodes/<node>.md` for connection details, run command, and constraints.
 
-- **Node**: [node name, e.g., local or gym1]
-- **Utilization**: [from the node file, e.g., 50% — scale num_envs and batch sizes accordingly]
+- **Node**: [node name, e.g., local or my-gpu-server]
+- **Utilization**: [from the node file, e.g., 50% — scale resources accordingly]
 
 ## Constraints
 

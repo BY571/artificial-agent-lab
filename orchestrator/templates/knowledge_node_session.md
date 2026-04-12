@@ -16,17 +16,16 @@ The PI appends one JSON line to the repo-level `knowledge_graph.jsonl` when a re
   "success_criteria_met": true,
 
   "best_result": {
-    "run_id": "001_exp03",
-    "total_return_pct": 12.5,
-    "sharpe_ratio": 0.8,
-    "description": "Sortino-style asymmetric reward with early stopping at 3M frames"
+    "run_id": "001_exp05_phd_1",
+    "primary_metric_value": 85.69,
+    "description": "Augmentation + BatchNorm + CosineAnnealing + weight decay"
   },
 
   "threads_summary": {
-    "total": 4,
-    "concluded": 3,
-    "abandoned": 1,
-    "best_thread": "001_reward_shaping"
+    "total": 2,
+    "concluded": 2,
+    "abandoned": 0,
+    "best_thread": "001_augmentation"
   },
 
   "experiments_summary": {
@@ -37,16 +36,14 @@ The PI appends one JSON line to the repo-level `knowledge_graph.jsonl` when a re
   },
 
   "key_insights": [
-    "Training instability after 2M frames — early stopping is critical for this dataset",
-    "Asymmetric reward penalties improve OOD generalization significantly",
-    "Raw OHLCV features sufficient — adding indicators didn't help",
-    "50% utilization on local leaves room for development work"
+    "Data augmentation + BatchNorm + cosine annealing stack multiplicatively",
+    "Learning rate 0.1 works better than 0.01 when BatchNorm is present",
+    "Weight decay provides small but consistent improvement"
   ],
 
   "what_didnt_work": [
-    "Drawdown penalty alone — insufficient without reward asymmetry",
-    "Higher entropy coefficient — caused learning collapse",
-    "Feature engineering with RSI/MACD — no improvement over raw OHLCV"
+    "High dropout (0.5) — too aggressive for this model size",
+    "Training beyond 50 epochs — accuracy plateaus"
   ],
 
   "recommended_for_future": [
