@@ -19,31 +19,31 @@ You provide four things:
 The lab does the rest:
 
 ```
-                     ┌─────────────────────────────────────────┐
-                     │  PI Agent (Principal Investigator)       │
-  sources/           │                                         │
-  skills/      ───►  │  Reads everything → opens threads →     │
-  proposal.md        │  dispatches PhDs → reviews findings     │
-  compute_nodes/     │  → generates new ideas → repeat         │
-                     │                                         │
-                     │  ┌────────────┐      ┌────────────┐     │
-                     │  │   phd_1    │      │   phd_2    │     │
-                     │  │            │      │            │     │
-                     │  │  Runs exp  │      │  Runs exp  │     │
-                     │  │  on node A │      │  on node B │     │
-                     │  └─────┬──────┘      └─────┬──────┘     │
-                     │        └────────┬──────────┘            │
-                     │                 ▼                        │
-                     │       PI reviews findings,              │
-                     │       opens next thread                 │
-                     │                 │                        │
-                     │                 ▼                        │
-                     │       When done: writes paper            │
-                     └─────────────────────────────────────────┘
-                                       │
-                                       ▼
-                     results.jsonl + knowledge_graph.jsonl
-                     + paper/paper.pdf + reproduce.ipynb
+                 ┌───────────────────────────────────────┐
+                 │  PI Agent (Principal Investigator)     │
+sources/         │                                       │
+skills/    ───►  │  Reads everything → opens threads →   │
+proposal.md      │  dispatches PhDs → reviews findings   │
+compute_nodes/   │  → generates new ideas → repeat       │
+                 │                                       │
+                 │  ┌──────────┐      ┌──────────┐       │
+                 │  │  phd_1   │      │  phd_2   │       │
+                 │  │          │      │          │       │
+                 │  │ Runs exp │      │ Runs exp │       │
+                 │  │ on nodeA │      │ on nodeB │       │
+                 │  └────┬─────┘      └────┬─────┘       │
+                 │       └───────┬─────────┘             │
+                 │               ▼                       │
+                 │     PI reviews findings,              │
+                 │     opens next thread                 │
+                 │               │                       │
+                 │               ▼                       │
+                 │     When done: writes paper            │
+                 └───────────────────────────────────────┘
+                                 │
+                                 ▼
+                 results.jsonl + knowledge_graph.jsonl
+                 + paper/paper.pdf + reproduce.ipynb
 ```
 
 ## Quick Start
