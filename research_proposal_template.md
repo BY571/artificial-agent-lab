@@ -87,9 +87,17 @@ wait
 <!-- Allow investigators to search the web for papers and techniques -->
 true
 
+### Final Output
+
+<!-- What to produce when research concludes. -->
+<!-- Options: -->
+<!--   paper — full LaTeX research paper with figures and reproduce notebook -->
+<!--   summary — markdown summary of findings (faster, no LaTeX needed) -->
+paper
+
 ### Paper Review Rounds
 
-<!-- How many draft → review → revise cycles for the final paper -->
+<!-- How many draft → review → revise cycles (only used if output = paper) -->
 3
 
 ## Scope & Constraints

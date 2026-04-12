@@ -513,6 +513,37 @@ Review the current paper and dispatch an investigator to revise.
 """
 
 
+def build_summary_prompt(session_dir: Path, config: dict) -> str:
+    """Build the prompt for writing a markdown summary instead of a full paper."""
+    threads = get_thread_status(session_dir)
+    results = summarize_results(session_dir, config)
+
+    return f"""## Summary Phase
+
+Research is complete. Write a concise summary of findings.
+
+Dispatch an investigator to write `paper/summary.md`:
+
+**Instructions for the investigator:**
+- Read ALL source material: research_proposal.md, research_log.md, threads/*/findings.md, results.jsonl, knowledge_graph.jsonl
+- Write `paper/summary.md` with these sections:
+  1. **Research Question** — what was investigated
+  2. **Approach** — what threads were explored and why
+  3. **Key Results** — table of best results with metrics
+  4. **Findings** — what worked, what didn't, and why
+  5. **Recommendations** — what to do next based on findings
+- Be concise — this is a summary, not a paper. Aim for 2-4 pages.
+- Every number must trace to results.jsonl
+
+## Current State
+### Threads
+{format_threads(threads)}
+
+### Results
+{results}
+"""
+
+
 # ─── Rate Limit Handling ───────────────────────────────────────────────────
 
 
@@ -687,16 +718,34 @@ async def run_pi_loop(session_dir: Path, config: dict) -> None:
 
             iteration += 1
 
-        # ── Paper Writing Phase ─────────────────────────────────────────
+        # ── Output Phase ────────────────────────────────────────────────
+        # Always run — even after stop signal.
+        stop_file = session_dir / ".stop_autoresearch"
+        if stop_file.exists():
+            stop_file.unlink()
+            print("Stop signal cleared — entering output phase.\n")
 
-        if not should_stop(session_dir):
+        final_output = config.get("final_output", "paper")
+
+        if final_output == "summary":
+            print(f"\n{'='*60}")
+            print(f"SUMMARY PHASE")
+            print(f"{'='*60}\n")
+
+            summary_prompt = build_summary_prompt(session_dir, config)
+            await pi.query(summary_prompt)
+
+            async for message in pi.receive_response():
+                _handle_message(message)
+
+        else:
             total_rounds = config["paper_review_rounds"]
             print(f"\n{'='*60}")
             print(f"PAPER WRITING PHASE — {total_rounds} rounds")
             print(f"{'='*60}\n")
 
             round_num = 1
-            while round_num <= total_rounds and not should_stop(session_dir):
+            while round_num <= total_rounds:
                 print(f"\n--- Paper round {round_num}/{total_rounds} ---\n")
 
                 paper_prompt = build_paper_prompt(session_dir, config, round_num, total_rounds)
@@ -715,7 +764,7 @@ async def run_pi_loop(session_dir: Path, config: dict) -> None:
                         print("\nRate limit hit during paper phase. Policy: stop.")
                         break
                     await _wait_for_rate_limit_reset(pi, session_dir, context="paper phase")
-                    continue  # Retry the same round
+                    continue
 
                 round_num += 1
 

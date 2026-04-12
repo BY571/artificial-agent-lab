@@ -36,6 +36,7 @@ def load_proposal_config(proposal_path: Path) -> dict:
         "research_budget_minutes": None,
         "rate_limit_policy": "wait",
         "web_search": True,
+        "final_output": "paper",
         "paper_review_rounds": 3,
     }
 
@@ -84,6 +85,11 @@ def load_proposal_config(proposal_path: Path) -> dict:
         elif header == "Web Search":
             if content_lines:
                 config["web_search"] = content_lines[0].strip().lower() == "true"
+        elif header == "Final Output":
+            if content_lines:
+                val = content_lines[0].strip().lower()
+                if val in ("paper", "summary"):
+                    config["final_output"] = val
         elif header == "Paper Review Rounds":
             if content_lines:
                 try:
