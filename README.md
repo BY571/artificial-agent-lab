@@ -10,7 +10,7 @@
 
 ## How It Works
 
-Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-agent-sdk). A PI agent orchestrates multiple PhD investigator agents that run experiments in parallel on your compute, record results in a knowledge graph, and produce a research paper when done.
+Built on [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-agent-sdk). A PI agent orchestrates multiple PhD investigator agents that run experiments in parallel on your compute, record results in a knowledge graph, and produce a research paper with a reproducibility notebook when done.
 
 You provide four things:
 1. **Source material** — code, papers, notes, data
