@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+
+# Outputs
+outputs/
+multirun/
+
+# Run logs (large)
+autoresearch/*/runs/*/run.log
+
+# Stop signals
+.stop_autoresearch
+
+# Model checkpoints
+*.pth
+*.pt
+*.ckpt
