@@ -58,7 +58,7 @@ This creates `autoresearch/2026-04-12_my-research/` with:
 - `research_proposal.md` — skeleton to fill in
 - Empty `results.jsonl`, `knowledge_graph.jsonl`, `research_log.md`
 
-### 4. Add Source Material
+### 4. Add Source Material & Skills
 
 Drop everything the lab needs into `sources/`:
 
@@ -67,6 +67,15 @@ cp my_training_script.py autoresearch/2026-04-12_my-research/sources/
 cp reference_paper.pdf autoresearch/2026-04-12_my-research/sources/
 cp colleagues_notes.md autoresearch/2026-04-12_my-research/sources/
 ```
+
+Optionally add domain skills — `.md` files with patterns, APIs, or conventions:
+
+```bash
+cp pytorch-best-practices.md autoresearch/2026-04-12_my-research/skills/
+cp evaluation-protocol.md autoresearch/2026-04-12_my-research/skills/
+```
+
+Skills get injected into both PI and investigator prompts automatically.
 
 ### 5. Write the Research Proposal
 
@@ -107,6 +116,8 @@ autoresearch/2026-04-12_my-research/
 │   ├── train.py             #   (whatever you provide)
 │   ├── reference.pdf
 │   └── notes.md
+├── skills/                  # Domain knowledge (optional .md files)
+│   └── my-domain.md         #   Injected into agent prompts
 ├── research_log.md          # PI's strategic log
 ├── results.jsonl            # All experiment metrics
 ├── knowledge_graph.jsonl    # Knowledge nodes per experiment

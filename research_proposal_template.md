@@ -32,6 +32,16 @@
 <!--   - sources/notes.md — colleague's preliminary findings -->
 <!--   - sources/data/ — dataset to use for experiments -->
 
+## Skills
+
+<!-- Optional: domain knowledge files in skills/ that investigators should use. -->
+<!-- Drop .md files with domain-specific patterns, APIs, conventions, or techniques. -->
+<!-- These get loaded into both PI and investigator prompts automatically. -->
+<!-- Examples: -->
+<!--   - skills/pytorch-training.md — PyTorch training patterns and best practices -->
+<!--   - skills/data-preprocessing.md — how to handle the specific data format -->
+<!--   - skills/evaluation-protocol.md — how to properly evaluate results -->
+
 ## Configuration
 
 ### Primary Metric

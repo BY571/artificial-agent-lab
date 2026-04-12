@@ -42,6 +42,7 @@ def main():
 
     # Create session structure
     (session_dir / "sources").mkdir()
+    (session_dir / "skills").mkdir()
     (session_dir / "threads").mkdir()
     (session_dir / "runs").mkdir()
     (session_dir / "results.jsonl").touch()

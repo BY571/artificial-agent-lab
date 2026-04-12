@@ -109,6 +109,7 @@ research-lab/
 │   └── YYYY-MM-DD_name/
 │       ├── research_proposal.md   #   Research brief (read-only)
 │       ├── sources/               #   User-provided context material
+│       ├── skills/               #   Domain knowledge (.md files)
 │       ├── research_log.md        #   PI's strategic log
 │       ├── threads/               #   Research threads
 │       ├── results.jsonl          #   Experiment results

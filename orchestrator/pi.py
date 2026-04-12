@@ -140,6 +140,23 @@ def format_threads(threads: list[dict]) -> str:
     return "\n".join(lines)
 
 
+def _load_session_skills(session_dir: Path) -> str:
+    """Load domain skills from the session's skills/ directory.
+
+    Each .md file in skills/ is a domain knowledge pack that gets
+    injected into both PI and investigator prompts.
+    """
+    skills_dir = session_dir / "skills"
+    if not skills_dir.exists():
+        return ""
+
+    parts = []
+    for skill_file in sorted(skills_dir.glob("*.md")):
+        parts.append(f"### {skill_file.stem}\n\n{skill_file.read_text()}")
+
+    return "\n\n---\n\n".join(parts) if parts else ""
+
+
 def load_compute_node(config: dict) -> str:
     """Load compute node details for the investigator."""
     hardware = config["hardware"]
@@ -237,13 +254,19 @@ def build_pi_options(session_dir: Path, config: dict) -> ClaudeAgentOptions:
     brief_template = load_template("thread_brief")
     findings_template = load_template("thread_findings")
 
-    # Augment PI prompt with the brief template and compute node info
-    full_pi_prompt = "\n\n".join([
+    # Load session-level skills (domain knowledge)
+    skills_content = _load_session_skills(session_dir)
+
+    # Augment PI prompt with skills, compute nodes, and brief template
+    pi_parts = [
         pi_prompt,
         f"## Available Compute Nodes\n\nAssign one node per thread when dispatching investigators.\n\n{compute_details}",
         "## Thread Brief Template\n\nUse this format when writing `brief.md` for new threads:\n",
         f"```markdown\n{brief_template}\n```",
-    ])
+    ]
+    if skills_content:
+        pi_parts.append(f"## Domain Skills\n\nThe following domain knowledge is available to you and your investigators:\n\n{skills_content}")
+    full_pi_prompt = "\n\n".join(pi_parts)
 
     investigator_tools = ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
     if config.get("web_search", False):
@@ -254,7 +277,7 @@ def build_pi_options(session_dir: Path, config: dict) -> ClaudeAgentOptions:
     agents = {}
     for i in range(1, num_investigators + 1):
         name = f"phd_{i}"
-        full_investigator_prompt = "\n\n".join([
+        inv_parts = [
             investigator_prompt,
             f"## Your Identity\n\nYou are **{name}**.\n\n"
             f"**run_id format — follow EXACTLY:** `{{thread_num}}_exp{{N}}_{name}`\n\n"
@@ -266,7 +289,10 @@ def build_pi_options(session_dir: Path, config: dict) -> ClaudeAgentOptions:
             f"## Session\n\nWorking directory: `{session_dir}`",
             f"Primary metric: **{config['metric']}**",
             f"Seeds per experiment: {config['seeds']}",
-        ])
+        ]
+        if skills_content:
+            inv_parts.append(f"## Domain Skills\n\n{skills_content}")
+        full_investigator_prompt = "\n\n".join(inv_parts)
         agents[name] = AgentDefinition(
             description=f"PhD researcher '{name}' — runs experiment loops on a research thread. "
             f"Dispatch to a thread with the thread directory and brief.",
