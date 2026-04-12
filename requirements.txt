@@ -1,0 +1,4 @@
+claude-agent-sdk
+streamlit>=1.30
+plotly>=5.0
+pandas

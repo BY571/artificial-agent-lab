@@ -1,0 +1,18 @@
+[project]
+name = "artificial-agent-lab"
+version = "0.1.0"
+description = "Autonomous research lab powered by AI agents"
+requires-python = ">=3.11"
+dependencies = [
+    "claude-agent-sdk",
+    "streamlit>=1.30",
+    "plotly>=5.0",
+    "pandas",
+]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["orchestrator*", "harness*"]

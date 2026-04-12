@@ -10,163 +10,313 @@
 
 ## How It Works
 
+You provide three things:
+1. **Source material** — code, papers, notes, data (anything the lab should read and work with)
+2. **Skills** — domain knowledge files that guide how agents work (optional but recommended)
+3. **Research proposal** — what to investigate, how to measure success
+
+The lab does the rest:
+
 ```
-You provide source material + research proposal
-        │
-        ▼
-┌─────────────────────────────────────────────────────┐
-│  PI Agent (Principal Investigator)                   │
-│                                                      │
-│  Reads proposal + sources → opens threads →          │
-│  dispatches investigators → reviews findings →       │
-│  generates new ideas → writes research_log.md        │
-│                                                      │
-│  ┌─────────────────┐    ┌─────────────────┐          │
-│  │ Investigator A   │    │ Investigator B   │         │
-│  │ (phd_1)          │    │ (phd_2)          │         │
-│  │                  │    │                  │         │
-│  │ Reads sources    │    │ Reads sources    │         │
-│  │ Runs experiments │    │ Runs experiments │         │
-│  │ Uses skills      │    │ Uses skills      │         │
-│  │ Reports findings │    │ Reports findings │         │
-│  └────────┬─────────┘    └────────┬─────────┘         │
-│           │ findings.md           │ findings.md       │
-│           └───────────┬───────────┘                   │
-│                       ▼                               │
-│           PI reviews, synthesizes,                    │
-│           generates new hypotheses,                   │
-│           opens next thread or writes paper            │
-└─────────────────────────────────────────────────────┘
+                    ┌──────────────────────────────────────┐
+                    │  PI Agent (Principal Investigator)    │
+  sources/          │                                      │
+  skills/     ───►  │  Reads everything → opens threads →  │
+  proposal.md       │  dispatches PhDs → reviews findings  │
+                    │  → generates new ideas → repeat      │
+                    │                                      │
+                    │  ┌──────────┐    ┌──────────┐        │
+                    │  │  phd_1   │    │  phd_2   │        │
+                    │  │          │    │          │        │
+                    │  │ Runs exp │    │ Runs exp │        │
+                    │  │ on node1 │    │ on node2 │        │
+                    │  └────┬─────┘    └────┬─────┘        │
+                    │       └──────┬────────┘              │
+                    │              ▼                        │
+                    │     PI reviews findings,             │
+                    │     opens next thread                │
+                    │              │                        │
+                    │              ▼                        │
+                    │     When done: writes paper           │
+                    └──────────────────────────────────────┘
+                              │
+                              ▼
+                    results.jsonl + knowledge_graph.jsonl
+                    + paper/paper.pdf + reproduce.ipynb
 ```
 
 ## Quick Start
 
-### 1. Setup
+### 1. Install
 
 ```bash
 git clone git@github.com:BY571/artificial-agent-lab.git
-cd research-lab
-pip install claude-agent-sdk streamlit plotly pandas
+cd artificial-agent-lab
+
+# Install dependencies
+uv sync
+# Or without uv:
+pip install -r requirements.txt
 ```
 
-### 2. Configure Compute
+Requires [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-agent-sdk).
 
-Create `compute_nodes/local.md` (already included) or add remote nodes using `compute_nodes/TEMPLATE.md`.
+### 2. Define Your Compute Nodes
+
+Each machine you want the lab to use needs a file in `compute_nodes/`. A `local.md` is included by default.
+
+To add a remote machine, copy the template:
+
+```bash
+cp compute_nodes/TEMPLATE.md compute_nodes/my-gpu-server.md
+```
+
+Then fill in:
+
+```markdown
+# my-gpu-server
+
+## Connection
+ssh user@192.168.1.100
+
+## Working Directory
+~/projects/artificial-agent-lab
+
+## Hardware
+NVIDIA A100 80GB, 64 CPU cores, 256GB RAM
+
+## Environment Setup
+git clone ... && cd artificial-agent-lab && uv sync
+
+## Run Command
+uv run python <script> [args]
+
+## Utilization
+100%
+
+## Constraints
+- Max 2 parallel training processes
+- Always use --no-sync if uv lock differs from local
+```
+
+The number of investigators is automatically set to match the number of compute nodes (or you can override it manually in the research proposal).
 
 ### 3. Create a Research Session
 
 ```bash
-python scripts/init_session.py --name "my-research" --sources /path/to/my/code
+uv run python scripts/init_session.py --name "my-research" --sources /path/to/my/code
 ```
 
-This creates `autoresearch/2026-04-12_my-research/` with:
-- `sources/` — your code, papers, notes copied here
-- `research_proposal.md` — skeleton to fill in
-- Empty `results.jsonl`, `knowledge_graph.jsonl`, `research_log.md`
+This creates `autoresearch/<date>_my-research/` with:
 
-### 4. Add Source Material & Skills
+```
+autoresearch/2026-04-12_my-research/
+├── research_proposal.md     # ← You fill this in
+├── sources/                 # ← Your code, papers, notes (auto-copied from --sources)
+├── skills/                  # ← Domain knowledge files (you add these)
+├── threads/                 # Research threads (created by the PI)
+├── results.jsonl            # Experiment results (append-only)
+├── knowledge_graph.jsonl    # What was tried, learned, worth exploring next
+├── research_log.md          # PI's strategic decisions
+└── runs/                    # Per-run artifacts
+```
+
+### 4. Add Source Material
 
 Drop everything the lab needs into `sources/`:
 
 ```bash
-cp my_training_script.py autoresearch/2026-04-12_my-research/sources/
-cp reference_paper.pdf autoresearch/2026-04-12_my-research/sources/
-cp colleagues_notes.md autoresearch/2026-04-12_my-research/sources/
+# Code to experiment with
+cp train.py model.py config.yaml autoresearch/<session>/sources/
+
+# Reference papers
+cp reference_paper.pdf autoresearch/<session>/sources/
+
+# Colleague's notes or preliminary results
+cp findings_so_far.md autoresearch/<session>/sources/
+
+# Data files or pointers
+cp dataset_readme.md autoresearch/<session>/sources/
 ```
 
-Optionally add domain skills — `.md` files with patterns, APIs, or conventions:
+Investigators read everything in `sources/` before starting experiments.
+
+### 5. Add Skills (Recommended)
+
+Skills are `.md` files with domain knowledge that get injected into agent prompts. They guide **how** agents work — both during research AND paper writing.
 
 ```bash
-cp pytorch-best-practices.md autoresearch/2026-04-12_my-research/skills/
-cp evaluation-protocol.md autoresearch/2026-04-12_my-research/skills/
+# Research skills — domain-specific patterns and best practices
+cp pytorch-training.md autoresearch/<session>/skills/
+cp evaluation-protocol.md autoresearch/<session>/skills/
+
+# Paper writing skills — how to create good visualizations, structure, etc.
+cp scientific-plotting.md autoresearch/<session>/skills/
+cp latex-conventions.md autoresearch/<session>/skills/
 ```
 
-Skills get injected into both PI and investigator prompts automatically.
+Example skill file (`skills/evaluation-protocol.md`):
+```markdown
+# Evaluation Protocol
 
-### 5. Write the Research Proposal
+## Metrics
+Always report: accuracy, F1, precision, recall.
+Use macro-averaging for multi-class.
 
-Edit `autoresearch/2026-04-12_my-research/research_proposal.md` — fill in the question, hypothesis, success criteria, and starting ideas. Reference the source material.
+## Validation
+- 3-fold cross-validation minimum
+- Hold out last 20% of data chronologically (no random split for time series)
+- Always report mean ± std across folds
 
-### 6. Launch
+## Plots
+- Use seaborn with the "paper" context for publication-ready figures
+- Save as PDF, not PNG
+- Always include error bars or confidence intervals
+```
 
-Open Claude Code and say: **"Let's go"**
+Skills are optional but highly recommended — they prevent investigators from making domain-specific mistakes and produce better papers.
 
-Or directly:
+### 6. Write the Research Proposal
+
+Edit `autoresearch/<session>/research_proposal.md`:
+
+```markdown
+# Research Proposal: my-research
+
+## Research Question
+Can we improve the model's F1 score on the held-out test set?
+
+## Background
+Current best: F1=0.72 using a basic CNN. See sources/baseline_results.md.
+
+## Hypothesis
+Adding attention layers and tuning the learning rate schedule
+should improve F1 to >0.80.
+
+## Success Criteria
+F1 > 0.80 on held-out test, confirmed across 3 seeds.
+
+## Starting Ideas
+1. Add self-attention after the conv layers
+2. Try cosine annealing LR schedule
+3. Increase model depth (4 → 8 layers)
+4. Data augmentation (random crops, flips)
+
+## Configuration
+### Primary Metric
+**f1_score** (higher is better)
+### Hardware
+local+my-gpu-server
+### Investigators
+auto
+### Seeds
+3
+### Research Budget
+4h
+### Web Search
+true
+### Paper Review Rounds
+3
+```
+
+### 7. Launch
+
+Open Claude Code in the repo and say **"Let's go"** — the startup agent validates your proposal and launches the orchestrator.
+
+Or run directly:
+
 ```bash
-python -m orchestrator.run autoresearch/2026-04-12_my-research/
+uv run python -m orchestrator.run autoresearch/<session>/
 ```
 
-### 7. Monitor
+### 8. Monitor
 
 ```bash
-streamlit run dashboard.py
+uv run streamlit run dashboard.py
 ```
 
-### 8. Stop & Get Paper
+The dashboard shows:
+- **Thread cards** — status, hypothesis, experiment count per thread
+- **Metric progression** — primary metric over time
+- **Knowledge graph** — interactive visualization of what was explored
+- **Paper download** — when the paper is ready
+
+### 9. Stop & Get Your Paper
+
+Click "Stop Research" in the dashboard, or:
 
 ```bash
-touch autoresearch/2026-04-12_my-research/.stop_autoresearch
+touch autoresearch/<session>/.stop_autoresearch
 ```
 
-The PI finishes the current thread, writes a LaTeX paper, and exits. Merge results:
+The PI wraps up the current thread and writes a LaTeX paper with reproducibility notebook. When done, merge back to main:
+
 ```bash
-git checkout main && git merge research/2026-04-12_my-research
+git checkout main
+git merge research/<session-name>
 ```
 
-## Session Structure
+## What You Get
 
-```
-autoresearch/2026-04-12_my-research/
-├── research_proposal.md     # Your research brief (read-only)
-├── sources/                 # Your code, papers, notes, data
-│   ├── train.py             #   (whatever you provide)
-│   ├── reference.pdf
-│   └── notes.md
-├── skills/                  # Domain knowledge (optional .md files)
-│   └── my-domain.md         #   Injected into agent prompts
-├── research_log.md          # PI's strategic log
-├── results.jsonl            # All experiment metrics
-├── knowledge_graph.jsonl    # Knowledge nodes per experiment
-├── threads/                 # Research threads
-│   ├── 001_hypothesis_a/
-│   │   ├── brief.md         # PI's assignment
-│   │   ├── log.md           # Investigator's diary
-│   │   ├── findings.md      # Results report
-│   │   └── status.md        # active | concluded | abandoned
-│   └── 002_hypothesis_b/
-├── paper/                   # Final paper (written at end)
-│   ├── paper.tex
-│   ├── paper.pdf
-│   ├── reproduce.ipynb
-│   ├── figures/
-│   └── review_N.md
-└── runs/                    # Per-run artifacts
-```
+After a session, your `autoresearch/<session>/` contains:
 
-## Research Protocol
+| Output | Description |
+|--------|-------------|
+| `paper/paper.pdf` | LaTeX research paper with figures |
+| `paper/reproduce.ipynb` | Notebook to reproduce key results |
+| `results.jsonl` | Every experiment with metrics |
+| `knowledge_graph.jsonl` | What was tried, why, what was learned |
+| `research_log.md` | PI's strategic reasoning |
+| `threads/*/findings.md` | Per-thread analysis and recommendations |
 
-### Thread Lifecycle
+## Key Concepts
 
-```
-PI opens thread          PI reviews findings       PI decides
-     │                        │                        │
-     ▼                        ▼                        ▼
- brief.md ──→ Investigator ──→ findings.md ──→ conclude / continue / abandon
-              runs experiments                 update status.md
-```
+### Sources vs Skills
+
+| | Sources (`sources/`) | Skills (`skills/`) |
+|---|---|---|
+| **What** | Code, papers, data, notes | Domain knowledge, best practices |
+| **Purpose** | What to research | How to research (and write papers) |
+| **Read by** | Investigators | PI + Investigators (injected into prompts) |
+| **Examples** | `train.py`, `paper.pdf`, `data/` | `pytorch-patterns.md`, `plotting-guide.md` |
+
+### Compute Nodes
+
+Each machine the lab can use needs a file in `compute_nodes/`:
+
+| Field | Purpose |
+|-------|---------|
+| Connection | How to reach it (`ssh user@host` or "local") |
+| Hardware | What's available (GPU, RAM) |
+| Utilization | How much the lab may use (50% = shared machine) |
+| Run Command | How to execute experiments |
+| Constraints | Parallelism limits, special flags |
+
+Investigators are auto-assigned one per node. With `hardware: local+gpu1+gpu2`, the lab creates `phd_1`, `phd_2`, `phd_3` running in parallel.
 
 ### Knowledge Graph
 
-Every experiment produces a knowledge node with: what was tried, why, how, what happened, what was learned, and what to explore next. The PI and investigators read the graph before planning — no repeated failures, builds on discoveries.
+Every experiment produces a knowledge node:
+- **what** was changed and **why**
+- **outcome**: positive, negative, or neutral
+- **insights**: what was learned
+- **worth_exploring_next**: ideas for follow-up
 
-### Paper Writing
+The PI and investigators read the graph before planning — avoiding repeated failures and building on discoveries.
 
-When research concludes (budget expires or user stops), the PI dispatches an investigator to write a LaTeX paper, reviews it, and iterates for N rounds.
+### Unlimited Budget
+
+With `research_budget: unlimited`, the PI runs indefinitely:
+- Generates new hypotheses from findings
+- Combines successful approaches
+- Stress-tests best results
+- Only stops when you send the stop signal
 
 ## Design Principles
 
-- **Source-driven**: Drop your code/papers/notes → the lab reads them and researches
-- **Hierarchical**: PI thinks strategically, investigators execute, knowledge compounds
-- **Branch-per-session**: Each research session is isolated on its own git branch
-- **Append-only results**: results.jsonl and knowledge_graph.jsonl survive crashes
-- **Unlimited exploration**: With unlimited budget, the PI generates new ideas forever
+- **Source-driven**: Drop your materials → the lab reads them and researches
+- **Skill-augmented**: Domain knowledge guides both research AND paper writing
+- **Hierarchical**: PI thinks strategically, investigators execute
+- **Branch-per-session**: Each session is isolated on its own git branch
+- **Knowledge compounds**: The graph prevents repeated mistakes across threads
+- **Append-only**: results.jsonl and knowledge_graph.jsonl survive crashes
