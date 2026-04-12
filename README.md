@@ -53,22 +53,42 @@ git clone git@github.com:BY571/artificial-agent-lab.git
 cd artificial-agent-lab
 uv sync
 
-# Run the benchmark (~15 min, local machine)
+# Run the benchmark (~20 min, local machine, GPU auto-detected)
 bash benchmark/run_benchmark.sh
-```
 
-What happens:
-- Creates a session with a CNN baseline, training script, and PyTorch skills
-- PI opens threads for augmentation, scheduling, architecture improvements
-- Investigators run experiments, record results, build knowledge graph
-- After ~15 minutes, writes a summary of findings
-
-Monitor in real-time:
-```bash
+# Monitor in real-time (separate terminal)
 uv run streamlit run dashboard.py
 ```
 
 No config needed — everything is pre-configured in `benchmark/`.
+
+### What to Expect
+
+The lab takes a simple 3-layer CNN (~70% accuracy on CIFAR-10) and systematically improves it. Here's what a typical benchmark run produces:
+
+| # | Experiment | Accuracy | Change |
+|---|-----------|----------|--------|
+| 1 | Baseline | 74.25% | SimpleCNN, 10 epochs, SGD lr=0.01 |
+| 2 | + Augmentation | 75.04% | RandomCrop + HorizontalFlip |
+| 3 | + BatchNorm | 76.76% | BatchNorm2d after each conv layer |
+| 4 | + Scheduling | 84.39% | CosineAnnealing, 50 epochs, lr=0.1 |
+| 5 | + Regularization | 85.69% | Weight decay 1e-4 |
+| 6 | Seed validation | 85.92% | Confirms with seed=43 |
+
+```
+Accuracy %
+86 ┤                                        ●──● seed validation
+85 ┤                                   ●
+84 ┤                              ●
+   │
+77 ┤                         ●
+75 ┤                    ●
+74 ┤               ●
+   └───────────────────────────────────────────
+     Baseline   +Aug   +BN   +Sched  +WD  Seed
+```
+
+**~20 minutes total** — 6 experiments, +11.7% accuracy improvement, knowledge graph with insights per experiment, findings report, and a summary document. The PI progressively stacks improvements: augmentation → batch normalization → learning rate scheduling → regularization → seed validation.
 
 ---
 
