@@ -75,18 +75,9 @@ The lab takes a simple 3-layer CNN (~70% accuracy on CIFAR-10) and systematicall
 | 5 | + Regularization | 85.69% | Weight decay 1e-4 |
 | 6 | Seed validation | 85.92% | Confirms with seed=43 |
 
-```
-Accuracy %
-86 ┤                                        ●──● seed validation
-85 ┤                                   ●
-84 ┤                              ●
-   │
-77 ┤                         ●
-75 ┤                    ●
-74 ┤               ●
-   └───────────────────────────────────────────
-     Baseline   +Aug   +BN   +Sched  +WD  Seed
-```
+<p align="center">
+  <img src="docs/images/benchmark_results.png" alt="Benchmark Results" width="600">
+</p>
 
 **~20 minutes total** — 6 experiments, +11.7% accuracy improvement, knowledge graph with insights per experiment, findings report, and a summary document. The PI progressively stacks improvements: augmentation → batch normalization → learning rate scheduling → regularization → seed validation.
 
