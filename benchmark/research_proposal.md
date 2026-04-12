@@ -52,7 +52,7 @@ auto
 10 minutes
 
 ### Research Budget
-1h
+15m
 
 ### Rate Limit Policy
 wait

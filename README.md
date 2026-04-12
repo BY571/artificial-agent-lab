@@ -53,7 +53,7 @@ git clone git@github.com:BY571/artificial-agent-lab.git
 cd artificial-agent-lab
 uv sync
 
-# Run the benchmark (1 hour, local machine)
+# Run the benchmark (~15 min, local machine)
 bash benchmark/run_benchmark.sh
 ```
 
@@ -61,7 +61,7 @@ What happens:
 - Creates a session with a CNN baseline, training script, and PyTorch skills
 - PI opens threads for augmentation, scheduling, architecture improvements
 - Investigators run experiments, record results, build knowledge graph
-- After 1 hour (or when stopped), writes a summary of findings
+- After ~15 minutes, writes a summary of findings
 
 Monitor in real-time:
 ```bash
