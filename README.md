@@ -46,7 +46,7 @@ compute_nodes/   │  → generates new ideas → repeat       │
 
 ## Try It: CIFAR-10 Benchmark
 
-The fastest way to see the lab in action. A self-contained ML task — improve a simple CNN from ~70% to >85% accuracy on CIFAR-10:
+A simple CIFAR-10 classification task to showcase the full lab pipeline and verify everything works. The goal: improve a baseline CNN from ~70% to >85% test accuracy. It's intentionally simple — the point is to see how the PI opens threads, dispatches investigators, builds the knowledge graph, and writes a summary.
 
 ```bash
 git clone git@github.com:BY571/artificial-agent-lab.git
