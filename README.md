@@ -303,13 +303,30 @@ Every experiment produces a knowledge node:
 
 The PI and investigators read the graph before planning — avoiding repeated failures and building on discoveries.
 
-### Unlimited Budget
+### Research Budget
 
-With `research_budget: unlimited`, the PI runs indefinitely:
-- Generates new hypotheses from findings
-- Combines successful approaches
-- Stress-tests best results
-- Only stops when you send the stop signal
+Controls how long the lab researches before writing the paper. Set in the research proposal:
+
+| Setting | Behavior |
+|---------|----------|
+| `4h` | Research for 4 hours, then write paper. PI gets a soft warning at 75% (3h) and hard cutoff at 100%. |
+| `90m` | Research for 90 minutes. |
+| `unlimited` | Research indefinitely until you stop it. The PI cannot end on its own — only your stop signal triggers the paper phase. |
+
+The budget clock **pauses** during API rate limit waits, so you get the full research time you requested.
+
+When the budget expires (or you stop it), the PI transitions to the paper writing phase automatically.
+
+### API Rate Limits
+
+When the Claude API rate limit is hit, the lab handles it based on the `rate_limit_policy` in your research proposal:
+
+| Policy | Behavior |
+|--------|----------|
+| `wait` (default) | Pause research, poll every 5 minutes until the limit resets, then resume. The research budget clock pauses during the wait. |
+| `stop` | End the research phase and transition to paper writing. |
+
+With `wait`, the lab survives overnight rate limits — it pauses, waits for reset, and picks up exactly where it left off. No lost progress.
 
 ## Design Principles
 
