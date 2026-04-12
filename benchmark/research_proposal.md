@@ -18,7 +18,7 @@ A combination of data augmentation (random crops, horizontal flips), learning ra
 
 - **test_accuracy > 85%** confirmed across 2 seeds
 - No pretrained models — train from scratch
-- Training time < 10 minutes per experiment on CPU
+- Training time < 5 minutes per experiment (GPU auto-detected)
 
 ## Starting Ideas
 
