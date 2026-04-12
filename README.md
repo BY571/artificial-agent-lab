@@ -1,6 +1,12 @@
-# Research Lab
+<p align="center">
+  <img src="docs/images/logo.png" alt="Artificial Agent Lab" width="500">
+</p>
 
-A general-purpose autonomous research framework. Drop your code, papers, and notes into a session, write a research proposal, and AI agents run experiments indefinitely — systematically improving results and writing a paper when done.
+<p align="center">
+  An autonomous research lab powered by AI agents. Drop your code, papers, and notes — a PI agent and PhD investigators run experiments, build a knowledge graph, and write a paper.
+</p>
+
+---
 
 ## How It Works
 
@@ -38,7 +44,7 @@ You provide source material + research proposal
 ### 1. Setup
 
 ```bash
-git clone git@github.com:BY571/research-lab.git
+git clone git@github.com:BY571/artificial-agent-lab.git
 cd research-lab
 pip install claude-agent-sdk streamlit plotly pandas
 ```
