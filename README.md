@@ -10,39 +10,40 @@
 
 ## How It Works
 
-You provide three things:
+You provide four things:
 1. **Source material** — code, papers, notes, data (anything the lab should read and work with)
-2. **Skills** — domain knowledge files that guide how agents work (optional but recommended)
-3. **Research proposal** — what to investigate, how to measure success
+2. **Skills** — domain knowledge that guides how agents research and write (optional but recommended)
+3. **Compute nodes** — machines the lab can run experiments on (local, remote GPUs, clusters)
+4. **Research proposal** — what to investigate, how to measure success
 
 The lab does the rest:
 
 ```
-                    ┌──────────────────────────────────────┐
-                    │  PI Agent (Principal Investigator)    │
-  sources/          │                                      │
-  skills/     ───►  │  Reads everything → opens threads →  │
-  proposal.md       │  dispatches PhDs → reviews findings  │
-                    │  → generates new ideas → repeat      │
-                    │                                      │
-                    │  ┌──────────┐    ┌──────────┐        │
-                    │  │  phd_1   │    │  phd_2   │        │
-                    │  │          │    │          │        │
-                    │  │ Runs exp │    │ Runs exp │        │
-                    │  │ on node1 │    │ on node2 │        │
-                    │  └────┬─────┘    └────┬─────┘        │
-                    │       └──────┬────────┘              │
-                    │              ▼                        │
-                    │     PI reviews findings,             │
-                    │     opens next thread                │
-                    │              │                        │
-                    │              ▼                        │
-                    │     When done: writes paper           │
-                    └──────────────────────────────────────┘
-                              │
-                              ▼
-                    results.jsonl + knowledge_graph.jsonl
-                    + paper/paper.pdf + reproduce.ipynb
+                     ┌─────────────────────────────────────────┐
+                     │  PI Agent (Principal Investigator)       │
+  sources/           │                                         │
+  skills/      ───►  │  Reads everything → opens threads →     │
+  proposal.md        │  dispatches PhDs → reviews findings     │
+  compute_nodes/     │  → generates new ideas → repeat         │
+                     │                                         │
+                     │  ┌────────────┐      ┌────────────┐     │
+                     │  │   phd_1    │      │   phd_2    │     │
+                     │  │            │      │            │     │
+                     │  │  Runs exp  │      │  Runs exp  │     │
+                     │  │  on node A │      │  on node B │     │
+                     │  └─────┬──────┘      └─────┬──────┘     │
+                     │        └────────┬──────────┘            │
+                     │                 ▼                        │
+                     │       PI reviews findings,              │
+                     │       opens next thread                 │
+                     │                 │                        │
+                     │                 ▼                        │
+                     │       When done: writes paper            │
+                     └─────────────────────────────────────────┘
+                                       │
+                                       ▼
+                     results.jsonl + knowledge_graph.jsonl
+                     + paper/paper.pdf + reproduce.ipynb
 ```
 
 ## Quick Start
@@ -221,13 +222,11 @@ true
 
 ### 7. Launch
 
-Open Claude Code in the repo and say **"Let's go"** — the startup agent validates your proposal and launches the orchestrator.
-
-Or run directly:
-
 ```bash
 uv run python -m orchestrator.run autoresearch/<session>/
 ```
+
+Or open Claude Code in the repo — it reads `CLAUDE.md`, validates your proposal, and starts the orchestrator automatically.
 
 ### 8. Monitor
 
