@@ -20,7 +20,7 @@ The lab does the rest:
 
 ```
                  ┌───────────────────────────────────────┐
-                 │  PI Agent (Principal Investigator)     │
+                 │  PI Agent (Principal Investigator)    │
 sources/         │                                       │
 skills/    ───►  │  Reads everything → opens threads →   │
 proposal.md      │  dispatches PhDs → reviews findings   │
@@ -38,7 +38,7 @@ compute_nodes/   │  → generates new ideas → repeat       │
                  │     opens next thread                 │
                  │               │                       │
                  │               ▼                       │
-                 │     When done: writes paper            │
+                 │     When done: writes paper           │
                  └───────────────────────────────────────┘
                                  │
                                  ▼
