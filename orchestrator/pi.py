@@ -15,10 +15,16 @@ from claude_agent_sdk import (
     TextBlock,
     ToolUseBlock,
 )
+from claude_agent_sdk._errors import ClaudeSDKError
 
 from harness.runner import load_results, should_stop
 
 RATE_LIMIT_POLL_INTERVAL = 300
+# Recovery from SDK subprocess deaths (e.g. CLIConnectionError "Cannot write to terminated process"):
+# each retry rebuilds the ClaudeSDKClient from scratch. Safe because the PI re-reads all state
+# from disk in every _continuation_prompt — no in-memory state is lost across reconnects.
+MAX_SDK_RECONNECTS = 10
+SDK_RECONNECT_BASE_BACKOFF = 5
 PROMPTS_DIR = Path(__file__).resolve().parent / "prompts"
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -336,9 +342,19 @@ Review paper/paper.tex. Write paper/review_{round_num - 1}.md. Dispatch investig
 # ─── Response Processing ─────────────────────────────────────────────────────
 
 
+_RATE_LIMIT_PATTERNS = (
+    "limit reached",        # "Limit reached · resets 12pm (Europe/Madrid)..."
+    "hit your limit",
+    "rate limit",
+    "rate_limit",
+    "usage limit",
+    "too many requests",
+)
+
+
 def _is_rate_limited(text: str) -> bool:
     lower = text.lower()
-    return "hit your limit" in lower or "rate limit" in lower
+    return any(p in lower for p in _RATE_LIMIT_PATTERNS)
 
 
 async def _process_response(pi: ClaudeSDKClient) -> dict:
@@ -384,76 +400,115 @@ async def _wait_for_reset(pi: ClaudeSDKClient, session_dir: Path, budget: TimeBu
 # ─── Main Loop ───────────────────────────────────────────────────────────────
 
 
+async def _research_phase(
+    pi: ClaudeSDKClient,
+    session_dir: Path,
+    config: dict,
+    budget: TimeBudget,
+    state: dict,
+) -> None:
+    """Run the research loop until done or stopped. Mutates `state` so progress
+    survives a client reconnect (state['iteration'], state['initial_done'],
+    state['research_done'])."""
+    if not state["initial_done"]:
+        await pi.query(_initial_prompt(session_dir, config, budget))
+        await _process_response(pi)
+        state["iteration"] += 1
+        state["initial_done"] = True
+
+    while not should_stop(session_dir):
+        if budget.is_expired():
+            print(f"\nBUDGET EXPIRED ({_fmt(budget.elapsed)} active). Moving to output phase.\n")
+            state["research_done"] = True
+            return
+
+        print(f"\n{'='*50}\nIteration {state['iteration'] + 1} | {budget.status()}\n{'='*50}\n")
+        await pi.query(_continuation_prompt(session_dir, config, budget))
+        flags = await _process_response(pi)
+
+        if flags["rate_limited"]:
+            if config["rate_limit_policy"] == "stop":
+                state["research_done"] = True
+                return
+            await _wait_for_reset(pi, session_dir, budget)
+            continue
+
+        if not flags["got_content"]:
+            await asyncio.sleep(30)
+            continue
+
+        if flags["concluded"]:
+            if budget.budget is not None:
+                state["research_done"] = True
+                return
+            print("\nUnlimited budget — cannot stop. Keep researching.")
+            await pi.query("Budget is UNLIMITED. Open new threads. Keep researching.")
+            await _process_response(pi)
+
+        state["iteration"] += 1
+
+    state["research_done"] = True
+
+
+async def _output_phase(pi: ClaudeSDKClient, session_dir: Path, config: dict) -> None:
+    stop_file = session_dir / ".stop_autoresearch"
+    if stop_file.exists():
+        stop_file.unlink()
+
+    output = config.get("final_output", "paper")
+    if output == "summary":
+        print(f"\n{'='*50}\nSUMMARY PHASE\n{'='*50}\n")
+        await pi.query(_output_prompt(session_dir, config))
+        await _process_response(pi)
+        return
+
+    rounds = config["paper_review_rounds"]
+    print(f"\n{'='*50}\nPAPER PHASE — {rounds} rounds\n{'='*50}\n")
+    r = 1
+    while r <= rounds:
+        print(f"\n--- Round {r}/{rounds} ---\n")
+        await pi.query(_output_prompt(session_dir, config, r, rounds))
+        flags = await _process_response(pi)
+        if flags["rate_limited"]:
+            if config["rate_limit_policy"] == "stop":
+                break
+            await _wait_for_reset(pi, session_dir)
+            continue
+        r += 1
+
+
 async def run_pi_loop(session_dir: Path, config: dict) -> None:
     options = build_options(session_dir, config)
     budget = TimeBudget(config["research_budget_minutes"])
-    iteration = 0
+    state = {"iteration": 0, "initial_done": False, "research_done": False}
 
     print(f"\nStarting: {session_dir.name}")
     print(f"  Investigators: {config['investigators']}, Metric: {config['metric']}, "
           f"Hardware: {config['hardware']}, Budget: {_fmt(budget.budget) if budget.budget else 'unlimited'}\n")
 
-    async with ClaudeSDKClient(options=options) as pi:
-        # Initial orientation
-        await pi.query(_initial_prompt(session_dir, config, budget))
-        await _process_response(pi)
-        iteration += 1
-
-        # Research loop
-        while not should_stop(session_dir):
-            if budget.is_expired():
-                print(f"\nBUDGET EXPIRED ({_fmt(budget.elapsed)} active). Moving to output phase.\n")
+    reconnects = 0
+    while True:
+        try:
+            async with ClaudeSDKClient(options=options) as pi:
+                if not state["research_done"]:
+                    await _research_phase(pi, session_dir, config, budget, state)
+                if state["research_done"]:
+                    await _output_phase(pi, session_dir, config)
+            break
+        except ClaudeSDKError as e:
+            reconnects += 1
+            print(f"\n[SDK crash #{reconnects}] {type(e).__name__}: {e}")
+            if reconnects > MAX_SDK_RECONNECTS:
+                print(f"Too many reconnects ({reconnects}/{MAX_SDK_RECONNECTS}). Giving up.")
+                raise
+            if should_stop(session_dir):
+                print("Stop signal detected during reconnect. Exiting.")
                 break
+            backoff = min(120, SDK_RECONNECT_BASE_BACKOFF * 2 ** (reconnects - 1))
+            print(f"Rebuilding client in {backoff}s (state preserved via disk)...\n")
+            await asyncio.sleep(backoff)
 
-            print(f"\n{'='*50}\nIteration {iteration + 1} | {budget.status()}\n{'='*50}\n")
-            await pi.query(_continuation_prompt(session_dir, config, budget))
-            flags = await _process_response(pi)
-
-            if flags["rate_limited"]:
-                if config["rate_limit_policy"] == "stop":
-                    break
-                await _wait_for_reset(pi, session_dir, budget)
-                continue
-
-            if not flags["got_content"]:
-                await asyncio.sleep(30)
-                continue
-
-            if flags["concluded"]:
-                if budget.budget is not None:
-                    break
-                print("\nUnlimited budget — cannot stop. Keep researching.")
-                await pi.query("Budget is UNLIMITED. Open new threads. Keep researching.")
-                await _process_response(pi)
-
-            iteration += 1
-
-        # Output phase (always runs, even after stop signal)
-        stop_file = session_dir / ".stop_autoresearch"
-        if stop_file.exists():
-            stop_file.unlink()
-
-        output = config.get("final_output", "paper")
-        if output == "summary":
-            print(f"\n{'='*50}\nSUMMARY PHASE\n{'='*50}\n")
-            await pi.query(_output_prompt(session_dir, config))
-            await _process_response(pi)
-        else:
-            rounds = config["paper_review_rounds"]
-            print(f"\n{'='*50}\nPAPER PHASE — {rounds} rounds\n{'='*50}\n")
-            r = 1
-            while r <= rounds:
-                print(f"\n--- Round {r}/{rounds} ---\n")
-                await pi.query(_output_prompt(session_dir, config, r, rounds))
-                flags = await _process_response(pi)
-                if flags["rate_limited"]:
-                    if config["rate_limit_policy"] == "stop":
-                        break
-                    await _wait_for_reset(pi, session_dir)
-                    continue
-                r += 1
-
-    print(f"\nDone. {iteration} iterations, {_fmt((time.time() - budget.start) / 60)} total.")
+    print(f"\nDone. {state['iteration']} iterations, {_fmt((time.time() - budget.start) / 60)} total.")
     print(f"Results: {session_dir / 'results.jsonl'}")
     print(f"Log: {session_dir / 'research_log.md'}")
     if (session_dir / "paper" / "paper.tex").exists():
