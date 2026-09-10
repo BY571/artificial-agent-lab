@@ -98,6 +98,17 @@ uv sync    # or: pip install -r requirements.txt
 
 Requires [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and the [Claude Agent SDK](https://docs.anthropic.com/en/docs/claude-agent-sdk).
 
+**Authentication.** The lab runs through the Claude Code CLI, so it uses whatever the CLI is logged in with. Two options:
+
+- **Claude subscription** (Pro/Max): run `claude login` once. Sessions count against your plan's usage limits, and the `rate_limit_policy` setting (see [Research Budget & Rate Limits](#research-budget--rate-limits)) controls what happens when you hit them.
+- **API key**: set `ANTHROPIC_API_KEY` in your environment. Usage is billed per token at API rates with no plan limits, which suits long or unattended runs.
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+```
+
+When both are present, the API key takes precedence. Anthropic has announced (and, as of mid-2026, paused) a plan to move Agent SDK usage off subscription plans. If that change takes effect, use the API key option.
+
 </details>
 
 <details>
